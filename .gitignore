@@ -11,3 +11,6 @@ saved_masks/
 
 # Ignore Practice Files
 [0-9][0-9]_*.py
+
+# Ignore Cache
+__pycache__/
