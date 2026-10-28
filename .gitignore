@@ -1,0 +1,13 @@
+# Ignore Folders
+.mechenv/
+.mechenvCUDA/
+.vscode/
+Log/
+saved_masks/
+
+# Ignore images
+*.png
+*.jpg
+
+# Ignore Practice Files
+[0-9][0-9]_*.py
