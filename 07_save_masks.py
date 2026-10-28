@@ -33,6 +33,7 @@ def save_masks(results, output_dir) -> None:
         file_path = output_dir / f"instance{i:04d}.png"
         mask = results["masks"][i]
         mask_array = mask.cpu().numpy()
+        # Convert to proper format (uint 8) for Image
         mask_array = mask_array.astype(np.uint8) * 255
         mask_image = Image.fromarray(mask_array)
         mask_image.save(file_path, "PNG")

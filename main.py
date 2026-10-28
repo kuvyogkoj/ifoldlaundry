@@ -1,5 +1,8 @@
 
+import sys
+print(sys.executable) 
 from transformers import Sam3Model, Sam3Processor
+from pyorbbecsdk import Pipeline
 from PIL import Image
 from pathlib import Path
 import torch
@@ -8,21 +11,24 @@ import cv2
 
 def main() -> None:
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    processor, model = load_sam(device)
+    # processor, model = load_sam(device)
     prompt = "clothes"
 
-    processed_frame = None
-    cap = cv2.VideoCapture(0)
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("failed to read webcam")
-            break
+    pipeline = Pipeline()
+    pipeline.start()
 
-        if processed_frame is None:
-            cv2.imshow("Webcam", frame)
-        else:
-            cv2.imshow("Webcam", processed_frame)
+    # cap = cv2.VideoCapture(0)
+    while True:
+        frames = pipeline.wait_for_frames(1000)
+        if frames is None:
+            continue
+
+        color_frame = frames.get_color_frame()
+        depth_frame = frames.get_depth_frame()
+        # if processed_frame is None:
+        #     cv2.imshow("Webcam", frame)
+        # else:
+        #     cv2.imshow("Webcam", processed_frame)
 
         key = cv2.waitKey(1) & 0xFF
 

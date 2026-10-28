@@ -6,7 +6,18 @@ import torch
 import numpy as np
 import cv2
 
+
 def main() -> None:
+    """
+    Program opens camera and allows user to take a picture for input. That image
+    will be processed to create instance segmentations of clothes. 
+    Segmentation masks overlays will be returned to the user.
+
+    PRESS C to capture
+    PRESS Q to quit
+
+    NOTE: This script currently runs on a 2d web-cam.
+    """
     device = "cuda" if torch.cuda.is_available() else "cpu"
     processor, model = load_sam(device)
     prompt = "clothes"
@@ -37,6 +48,7 @@ def main() -> None:
 
             
 def process_input(frame, model, processor, prompt, device) -> np.array:
+    
     image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     inputs = processor(images=image_rgb, text=prompt, return_tensors="pt").to(device)
