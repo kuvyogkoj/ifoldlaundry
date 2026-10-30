@@ -2,14 +2,30 @@
 import sys
 print(sys.executable) 
 from transformers import Sam3Model, Sam3Processor
-from pyorbbecsdk import Pipeline
+from pyorbbecsdk_cam import Pipeline
 from PIL import Image
 from pathlib import Path
 import torch
 import numpy as np
 import cv2
 
+
 def main() -> None:
+    """
+    Program opens camera and allows user to take a picture for input. That image
+    will be processed to create instance segmentations of clothes. 
+    Segmentation masks overlays will be returned to the user.
+
+    PRESS C to capture
+    PRESS Q to quit
+
+    NOTE: This script currently runs on a depth camera utilizing pyorbbecsdk as a package
+
+    SOURCES:
+    camera module => https://github.com/orbbec/pyorbbecsdk/tree/v2-main/examples
+                     https://github.com/orbbec/pyorbbecsdk? 
+                     https://orbbec.github.io/pyorbbecsdk/                     
+    """
     device = "cuda" if torch.cuda.is_available() else "cpu"
     # processor, model = load_sam(device)
     prompt = "clothes"
@@ -38,11 +54,16 @@ def main() -> None:
         if key == ord("c"):
             mask_overlay = process_input(frame, model, processor, prompt, device)
             processed_frame = cv2.cvtColor(mask_overlay, cv2.COLOR_RGB2BGR)
-    cap.release()
+    # cap.release()
     cv2.destroyAllWindows()
 
             
 def process_input(frame, model, processor, prompt, device) -> np.array:
+    """"
+    This function processes image captured from the camera and converts
+    it's format into a form that is usable for our segmentation model (SAM)
+    then calls 'process_output(...)' to create and image overlay
+    """
     image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     inputs = processor(images=image_rgb, text=prompt, return_tensors="pt").to(device)
@@ -58,6 +79,10 @@ def process_input(frame, model, processor, prompt, device) -> np.array:
     return process_output(image_rgb, segments[0], output_dir, 0.5)
 
 def process_output(frame, results, output_dir, alpha) -> np.array:
+    """
+    This function is called by process_input. It returns a mask overlay pased on the 
+    segmentations passed in. 
+    """
     overlay = np.asarray(frame).astype(np.float32).copy()
     for i in range(len(results["masks"])):
         mask = results["masks"][i]

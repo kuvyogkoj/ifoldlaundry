@@ -38,8 +38,8 @@ import cv2
 import numpy as np
 from utils import frame_to_bgr_image, is_dabai_a_series_device
 
-from pyorbbecsdk_cam import OBAlignMode  # type: ignore
-from pyorbbecsdk_cam import (
+from pyorbbecsdk import OBAlignMode  # type: ignore
+from pyorbbecsdk import (
     AlignFilter,
     Config,
     Context,
@@ -276,7 +276,62 @@ def main():
             # -- Blend and display --
             blend_alpha = alpha if args.hw else 0.5
             overlay = cv2.addWeighted(color_image, 1 - blend_alpha, depth_image, blend_alpha, 0)
+####################################################################################################
+            # Get the center pixel and its ORIGINAL depth measurement
+            height, width = depth_data.shape
+            cy, cx = height // 2, width // 2
 
+            center_dist = depth_data[cy, cx]
+
+            # Check whether the original measurement is valid
+            in_range = (
+                np.isfinite(center_dist)
+                and MIN_DEPTH <= center_dist <= MAX_DEPTH
+            )
+
+            dist_label = f"{center_dist:.0f} mm" if in_range else "out of range"
+
+            # Create a separate array for visualization
+            if args.hw:
+                depth_visual = np.clip(depth_data, MIN_DEPTH, MAX_DEPTH)
+            else:
+                depth_visual = np.where(
+                    (depth_data > MIN_DEPTH) & (depth_data < MAX_DEPTH),
+                    depth_data,
+                    0
+                )
+
+            # Normalize for visualization
+            depth_image = cv2.normalize(
+                depth_visual,
+                None,
+                0,
+                255,
+                cv2.NORM_MINMAX
+            )
+
+            depth_image = cv2.applyColorMap(
+                depth_image.astype(np.uint8),
+                cv2.COLORMAP_JET
+            )
+
+            # Center of displayed overlay
+            display_h, display_w = overlay.shape[:2]
+            display_cx = display_w // 2
+            display_cy = display_h // 2
+
+            cv2.circle(overlay, (display_cx, display_cy), 5, (255, 255, 255), -1)
+
+            cv2.putText(
+                overlay,
+                dist_label,
+                (display_cx + 8, display_cy + 6),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255, 255, 255),
+                2,
+            )
+####################################################################################################
             # Status text
             if args.hw:
                 status = f"HW D2C: {'ON' if enable_hw_d2c else 'OFF'}  alpha={blend_alpha:.1f}"
